@@ -75,8 +75,10 @@ class Deck:
         """ Get the last card from the list of cards. 
         
         Return: 
-            Card: 
+            Card: The last card from the list of cards.
         
+        Side effects:
+            Modify self.cards
         
         """
     
