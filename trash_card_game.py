@@ -44,7 +44,7 @@ class Card:
         self.number = number
 
     def reveal(self):
-        """ Set the revealed boolean to Ture to indicate the card has been
+        """ Set the revealed boolean to True to indicate the card has been
             revealed.
 
         """
@@ -64,7 +64,7 @@ class Deck:
         self.build_deck()
 
     def build_deck(self):
-        """Build a deck
+        """ Build a deck
         Side effects:
             Set and modify self.cards.
         """
@@ -96,14 +96,20 @@ class Deck:
 
 
 class Player:
-    """[summary]
+    """ A class of player information.
+    
+    Attributes:
+        name (str): name of player.
+        cards (list): cards a player has.
     """
 
-    def __init__(self):
+    def __init__(self, name, cards):
+        self.name = name
+        self.cards = cards
 
 
 class GameStage(Enum):
-    """A Enum class that represents the 4 type of game stages.
+    """An Enum class that represents the 4 type of game stages.
 
     Args:
         Enum (Enum): Enum class as the parent class.
@@ -114,13 +120,29 @@ class GameStage(Enum):
     Player1Won = 3
     Player2Won = 4
 
-
-class Game:
-    """[summary]
+def hasCard(player, card):
+    """ Determines if player already has the dealt/chosen card.
+    
+    Args:
+        player (obj): a Player object.
+        card (obj): a card object the player was dealt.
+        
+    Returns:
+        has_card (bool): boolean of whether player has card or not. True if they do.
     """
 
-    def __init__(self):
-
+def playTrash(player1, player2):
+    """ Facilitates game of trash between two players until one wins.
+    
+    Args:
+        player1 (obj): a Player obj.
+        player1 (obj): a Player obj.
+        
+    Side effects: 
+        Modifies Player attributes.
+        Prints details of game and asks for input.
+    """
+        
 
 
 if __name__ == "__main__":
