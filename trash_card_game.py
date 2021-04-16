@@ -1,6 +1,7 @@
 """ Final project check in 1
 
 """
+import random
 from enum import Enum
 
 class Suit(Enum):
@@ -62,22 +63,25 @@ class Deck:
         self.cards = []
         self.build_deck()
 
-    def build_deck():
+    def build_deck(self):
         """Build a deck
         Side effects:
             Set and modify self.cards.
         """
-        for suit in ["Spades", "Clubs", "Diamonds", "Hearts"]
+        for suit in ["Spades", "Clubs", "Diamonds", "Hearts"]:
             for number in range(1,14):
                 self.cards.append(Card(suit, number))
+        self.shuffle()
 
-    def shuffle():
+    def shuffle(self):
         """ Randomly shuffle the list of cards.
 
         Side effects:
             Modify self.cards
 
         """
+        random.shuffle(self.cards)
+
 
     def deal():
         """ Get the last card from the list of cards.
