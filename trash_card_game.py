@@ -1,6 +1,7 @@
 """ Final project check in 1
 
 """
+from argparse import ArgumentParser
 import random
 from enum import Enum
 
@@ -241,4 +242,35 @@ def hasWon(player):
         
     """
 
+def main(player1Name, player2Name):
+    """ Initialize the Game with the player 1 name and player 2 name and play 
+        the game.
+    
+    Args:
+        player1Name (str): the name of player 1 
+        player2Name (str): the path of player 2 
+     
+    """
+
+def parse_args(arglist):
+    """ Parse command-line arguments.
+    
+    Expect two mandatory arguments (two string values represent player 1 and
+        player 2 names.
+    
+    Args:
+        arglist (list of str): arguments from the command line.
+    
+    Returns:
+        namespace: the parsed arguments, as a namespace.
+    """
+    parser = ArgumentParser()
+    parser.add_argument("-n1", "--player1name", help="string represents the"
+                        " name of player 1.")
+    parser.add_argument("-n2", "--player2name", help="string represents the"
+                        " name of player 2.")
+    return parser.parse_args(arglist)
+
 if __name__ == "__main__":
+    args = parse_args(sys.argv[1:])
+    main(args.player1Name, args.player2Name)
