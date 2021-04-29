@@ -32,12 +32,16 @@ class Card:
         """
         self.suit = suit
         self.number = number
+        self.revealed = revealed
 
     def reveal(self):
         """ Set the revealed boolean to True to indicate the card has been
             revealed.
 
+        Side effects:
+            Sets attribute revealed.
         """
+        self.revealed = True
 
 class Deck:
     """ A deck of cards.
@@ -50,6 +54,9 @@ class Deck:
     def __init__(self):
         """ Generate a standard deck of 52 cards and shuffle.
 
+        Side effects:
+        Set attributes cards.
+
         """
         self.cards = []
         self.build_deck()
@@ -58,7 +65,7 @@ class Deck:
         """ Build a deck
 
         Side effects:
-            Set and modify self.cards.
+            Modify self.cards.
 
         """
         for suit in Suit:
@@ -75,17 +82,37 @@ class Deck:
         """
         random.shuffle(self.cards)
 
-
-    def deal():
+    def deal(self, count = None):
         """ Get the last card from the list of cards.
+
+        Args:
+            count (int): The number of cards need to be dealed.
 
         Return:
             Card: The last card from the list of cards.
+
+        Raises:
+            ValueError: No card in cards or not enough cards to be dealed.
 
         Side effects:
             Modify self.cards
 
         """
+
+        if self.cards == None or len(self.cards) == 0:
+            raise ValueError("incorrect cards value.")
+
+        if count == None:
+            return self.cards.pop()
+        else:
+            if len(self.cards) < count:
+                raise ValueError("Not enough cards.")
+
+            dealedCards = []
+            for i in range(count):
+                dealedCards.append(self.cards.pop())
+            return dealedCards
+
 
 class Player:
     """ A class of player information with name, the list of the cards of the
@@ -93,8 +120,9 @@ class Player:
 
     Attributes:
         name (str): name of player.
-        cards (list): A list of Card objects representing the cards a player has
-            for the game. Initially, the player has 10 unrevealed cards.
+        positionCards (list): A list of Card objects representing the cards
+            a player has for the game. Initially, the player has 10 unrevealed
+            cards.
         cardInHand (Card): a card the player is dealt from the deck or from the
             disposed pool for making different decisions including swapping with
             one of the card frmo the cards of the player and disposing the card
@@ -102,21 +130,57 @@ class Player:
 
     """
 
-    def __init__(self, name, cards, cardInHand = None):
+    def __init__(self, name, positionCards, cardInHand = None):
         """ Initialize the player with a name, list of the cards of the player
             and an optional card in hand.
 
         Args:
             name (name): The name of the player.
-            cards (list): A list of 10 unrevealed Card objects representing the
-                cards a player initially has for the game.
+            positionCards (list): A list of 10 unrevealed Card objects
+                representing the cards a player initially has for the game.
             cardInHand (Card, optional): A Card object representing the card the
                 player has in hand to play the game. Defaults to None.
 
         """
         self.name = name
-        self.cards = cards
+        self.positionCards = positionCards
         self.cardInHand = cardInHand
+
+    def swap(self, index):
+        """ Try to swap a card in hand with a position card. If the cards can be
+        swapped, retuen True. Otherwise return False.
+
+        Args:
+            index (int): The index of the card in the cards attribute that the
+            card in hand is trying to swap.
+
+        Returns:
+            bool: Whether the swap is successful.
+
+        Raises:
+            ValueError: No card in hand or Position Cards are incorrect.
+            IndexError: Invalid index.
+
+        Side effects:
+            Modify attributes cardInHand and positionCards.
+
+        """
+
+        if self.cardInHand == None:
+            raise ValueError("No card in hand.")
+        elif self.positionCards == None or len(self.positionCards) != 10:
+            raise ValueError("Position Cards are incorrect.")
+        elif index < 1 or index >10:
+            raise IndexError("Invalid index.")
+
+
+        if self.cardInHand.number == 13 or self.cardInHand.number == index:
+            tmp = self.positionCards[index]
+            self.positionCards[index] = self.cardInHand
+            self.cardInHand = tmp
+            return True
+        else:
+            return False
 
 
 class GameStage(Enum):
@@ -167,6 +231,8 @@ class Game:
             player2Name (str): The name of Player 2.
 
         """
+
+
 
     def playTrash(self):
         """ Facilitates game of trash between two players until one wins.
