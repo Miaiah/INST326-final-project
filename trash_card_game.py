@@ -59,6 +59,7 @@ class Deck:
 
         """
         self.cards = []
+        self.discards = []
         self.build_deck()
 
     def build_deck(self):
@@ -68,6 +69,7 @@ class Deck:
             Modify self.cards.
 
         """
+        Suit = ["club", "diamond", "heart", "spade"]
         for suit in Suit:
             for number in range(1,14):
                 self.cards.append(Card(suit, number))
@@ -113,7 +115,6 @@ class Deck:
                 dealedCards.append(self.cards.pop())
             return dealedCards
 
-
 class Player:
     """ A class of player information with name, the list of the cards of the
         player and the card in the hand of the player.
@@ -130,7 +131,7 @@ class Player:
 
     """
 
-    def __init__(self, name, positionCards, cardInHand = None):
+    def __init__(self, name, positionCards = 10, cardInHand = None):
         """ Initialize the player with a name, list of the cards of the player
             and an optional card in hand.
 
@@ -145,6 +146,13 @@ class Player:
         self.name = name
         self.positionCards = positionCards
         self.cardInHand = cardInHand
+        self.table = []
+        self.table = get_table(cards_table = self.positionCards)
+
+    def draw_card(self):
+        self.cardInHand = card.cards.pop(0)
+        print("You have drew a card :", self.cardInHand.number, self.cardInHand.suit)
+        print("")
 
     def swap(self, index):
         """ Try to swap a card in hand with a position card. If the cards can be
@@ -271,7 +279,125 @@ class Game:
             attributes. Prints details of game and asks for input.
 
         """
+def get_table(cards_table = 10):
+    """get table for each player each round.
+    """
+    table = []
+    for i in range(cards_table):
+        card_draw = card.cards.pop(0)
+        table.append(card_draw)
+    return table
 
+def print_table(player):
+    """print the player's table
+    args:
+        player (object): player1 or player2
+    """
+    print(player.name, "'s table:")
+    pos = 1
+    for card_table in player.table:
+        if card_table.revealed == False:
+            print(f"Position: {pos:<2}, unrevealed")
+            pos += 1
+        else:
+            print(f"Position: {pos:<2}, ", card_table.number, card_table.suit)
+            pos += 1
+    print("")
+
+def place_card(player, position):
+    card_changed = player.table.pop(position)
+    player.table.insert(position, player.cardInHand) #place card
+    player.table[position].revealed = True #reveal card
+    player.cardInHand = card_changed
+    print("You have placed the card.")
+    print("")
+    print_table(player)
+    print("Now your card in hand is: ",player.cardInHand.number, player.cardInHand.suit)
+
+def play(player):
+    out = 0
+    while out < 1:
+        if player.cardInHand.number > 11: #can't do anything. pass term
+            while True:
+                decision = input("Do you want to discard the card? Y/N: ")
+                if decision == "Y":
+                    out = 1
+                    break
+                elif decision == "N":
+                    print("You can only discard the card.")
+                else:
+                    print("Invalid input.")
+        elif player.cardInHand.number == 11: #replace card to anywhere
+            while True:
+                position = int(input("Choose a position between 1 - 10: ")) #get a postion
+                if position > 10 or position < 1:
+                    print("Invalid position.")
+                else:
+                    break
+            position -= 1
+            place_card(player, position)
+        else: #card number between 1 - 10
+            while True:
+                decision = input("Do you want to discard the card? Y/N: ")
+                print("")
+                if player.cardInHand.number == 11:
+                    break
+                elif decision == "N":
+                    while True:
+                        pos_choose = int(input("Where do you want to place your card? ")) - 1
+                        position = player.cardInHand.number - 1
+                        if pos_choose != position:
+                            print("Invalid position. Please try again.")
+                        else:
+                            if player.table[position].revealed == False:
+                                place_card(player, position)
+                                break
+                            elif player.table[position].revealed == True and player.table[position].number == player.cardInHand.number:
+                                print("You can not place the card on this position. ")
+                                break
+                            elif player.table[position].revealed == True and player.table[position].number == 11:
+                                place_card(player, position)
+                                break
+                elif decision == "Y":
+                    out = 1
+                    break
+                else:
+                    print("Invalid answer. Please try again.")
+
+def count_deck(card):
+    """count the number of cards in the deck
+    """
+    count = 0
+    for i in card.cards:
+        count += 1
+    print("The deck has ", count, " cards now.")
+    print("")
+
+def discard(player):
+    """help the user discard the card
+    """
+    player.cardInHand.revealed == True
+    card.discards.append(player.cardInHand)
+    player.cardInHand = None
+
+def fill_deck(card):
+    """fill the deck from discard deck"""
+    one_card = card.discards.pop() #at least one card in discards deck
+    for item in card.discards:
+        item.revealed = False
+        card.cards.append(item)
+    card.discards.append(one_card)
+
+def check_deck(card):
+    """check that is the deck empty, if it is, we fill the deck
+    """
+    count = 0
+    for i in card.cards:
+        count += 1
+    if count > 0: #check is the deck empty
+        pass
+    else:   #If it is empty, fill it
+        fill_deck(card)
 
 def hasCard(player, card):
     """ Determines if player already has the dealt/chosen card.
@@ -306,6 +432,26 @@ def main(player1Name, player2Name):
         player2Name (str): the path of player 2
 
     """
+    card = Deck()
+    #player1 round
+    player1 = Player("player1") #have a table for player1 now
+    print_table(player1)
+    check_deck(card) #check is the deck empty, if it is, fill the card deck
+    player1.draw_card() #draw a card
+    count_deck(card)
+    play(player1) #play
+    discard(player1) #discard the card in your hand
+
+
+
+    #player2 round
+    player2 = Player("player2") #have a table for player2 now
+    print_table(player2)
+    check_deck(card)
+    player2.draw_card()
+    count_deck(card)
+    play(player2)
+    discard(player2)
 
 def parse_args(arglist):
     """ Parse command-line arguments.
