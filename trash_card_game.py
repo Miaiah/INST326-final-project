@@ -5,6 +5,19 @@ from argparse import ArgumentParser
 import random
 from enum import Enum
 
+import sys
+
+class Suit(Enum):
+    """A Enum class that represents the 4 type of suits of cards.
+        Enum reference: https://docs.python.org/3/library/enum.html
+
+    Args:
+        Enum (Enum): Enum class as the parent class
+    """
+    Spade = 1
+    Club = 2
+    Diamond = 3
+    Heart = 4
 
 class Card:
     """ A representation of a crad.
@@ -42,6 +55,12 @@ class Card:
             Sets attribute revealed.
         """
         self.revealed = True
+    
+    def __str__(self):
+        if self.revealed:
+            return f"{self.number} {self.suit}"
+        else:
+            return "*"
 
 class Deck:
     """ A deck of cards.
@@ -69,7 +88,6 @@ class Deck:
             Modify self.cards.
 
         """
-        Suit = ["club", "diamond", "heart", "spade"]
         for suit in Suit:
             for number in range(1,14):
                 self.cards.append(Card(suit, number))
@@ -104,8 +122,11 @@ class Deck:
         if self.cards == None or len(self.cards) == 0:
             raise ValueError("incorrect cards value.")
 
-        if count == None:
-            return self.cards.pop()
+        if count == None: # if there is no count input, reveal the card after
+            # the dealing of card
+            card = self.cards.pop()
+            card.reveal()
+            return card
         else:
             if len(self.cards) < count:
                 raise ValueError("Not enough cards.")
@@ -131,7 +152,7 @@ class Player:
 
     """
 
-    def __init__(self, name, positionCards = 10, cardInHand = None):
+    def __init__(self, name, positionCards, cardInHand = None):
         """ Initialize the player with a name, list of the cards of the player
             and an optional card in hand.
 
@@ -147,11 +168,12 @@ class Player:
         self.positionCards = positionCards
         self.cardInHand = cardInHand
         self.table = []
-        self.table = get_table(cards_table = self.positionCards)
+        self.table = get_table(10)
 
     def draw_card(self):
         self.cardInHand = card.cards.pop(0)
-        print("You have drew a card :", self.cardInHand.number, self.cardInHand.suit)
+        self.cardInHand.reveal()
+        print(f"You have drew a card : {self.cardInHand}")
         print("")
 
     def swap(self, index):
@@ -183,9 +205,10 @@ class Player:
 
 
         if self.cardInHand.number == 13 or self.cardInHand.number == index:
-            tmp = self.positionCards[index]
-            self.positionCards[index] = self.cardInHand
+            tmp = self.positionCards[index - 1]
+            self.positionCards[index - 1] = self.cardInHand
             self.cardInHand = tmp
+            self.cardInHand.reveal()
             return True
         else:
             return False
@@ -239,8 +262,7 @@ class Game:
             player2Name (str): The name of Player 2.
 
         """
-
-
+        
 
     def playTrash(self):
         """ Facilitates game of trash between two players until one wins.
@@ -279,7 +301,7 @@ class Game:
             attributes. Prints details of game and asks for input.
 
         """
-def get_table(cards_table = 10):
+def get_table(cards_table):
     """get table for each player each round.
     """
     table = []
@@ -289,30 +311,29 @@ def get_table(cards_table = 10):
     return table
 
 def print_table(player):
-    """print the player's table
+    """ print the player's table
+    
     args:
-        player (object): player1 or player2
+        player (Player): a player 
     """
-    print(player.name, "'s table:")
+    
+    print(f"{player.name}'s position cards:")
     pos = 1
-    for card_table in player.table:
-        if card_table.revealed == False:
-            print(f"Position: {pos:<2}, unrevealed")
-            pos += 1
-        else:
-            print(f"Position: {pos:<2}, ", card_table.number, card_table.suit)
-            pos += 1
-    print("")
+    for card in player.table:
+        print(f"{pos:<2}: {card}")
+        pos += 1
+    print()
 
 def place_card(player, position):
     card_changed = player.table.pop(position)
     player.table.insert(position, player.cardInHand) #place card
     player.table[position].revealed = True #reveal card
     player.cardInHand = card_changed
+    player.cardInHand.reveal()
     print("You have placed the card.")
     print("")
     print_table(player)
-    print("Now your card in hand is: ",player.cardInHand.number, player.cardInHand.suit)
+    print(f"Now your card in hand is: {player.cardInHand}")
 
 def play(player):
     out = 0
@@ -329,7 +350,8 @@ def play(player):
                     print("Invalid input.")
         elif player.cardInHand.number == 11: #replace card to anywhere
             while True:
-                position = int(input("Choose a position between 1 - 10: ")) #get a postion
+                position = int(input("Choose a position between 1 - 10: ")) 
+                #get a postion
                 if position > 10 or position < 1:
                     print("Invalid position.")
                 else:
@@ -344,18 +366,22 @@ def play(player):
                     break
                 elif decision == "N":
                     while True:
-                        pos_choose = int(input("Where do you want to place your card? ")) - 1
+                        pos_choose = int(input("Where do you want to place " +
+                                               "your card? ")) - 1
                         position = player.cardInHand.number - 1
                         if pos_choose != position:
                             print("Invalid position. Please try again.")
                         else:
-                            if player.table[position].revealed == False:
+                            if not player.table[position].revealed:
                                 place_card(player, position)
                                 break
-                            elif player.table[position].revealed == True and player.table[position].number == player.cardInHand.number:
-                                print("You can not place the card on this position. ")
+                            elif player.table[position].revealed and \
+                                player.table[position].number == position + 1:
+                                print("You can not place the card on this " + 
+                                      "position. ")
                                 break
-                            elif player.table[position].revealed == True and player.table[position].number == 11:
+                            elif player.table[position].revealed and \
+                                player.table[position].number == 11:
                                 place_card(player, position)
                                 break
                 elif decision == "Y":
@@ -376,7 +402,7 @@ def count_deck(card):
 def discard(player):
     """help the user discard the card
     """
-    player.cardInHand.revealed == True
+    player.cardInHand.revealed = True
     card.discards.append(player.cardInHand)
     player.cardInHand = None
 
@@ -434,7 +460,7 @@ def main(player1Name, player2Name):
     """
     card = Deck()
     #player1 round
-    player1 = Player("player1") #have a table for player1 now
+    player1 = Player(player1Name) #have a table for player1 now
     print_table(player1)
     check_deck(card) #check is the deck empty, if it is, fill the card deck
     player1.draw_card() #draw a card
@@ -445,7 +471,7 @@ def main(player1Name, player2Name):
 
 
     #player2 round
-    player2 = Player("player2") #have a table for player2 now
+    player2 = Player(player2Name) #have a table for player2 now
     print_table(player2)
     check_deck(card)
     player2.draw_card()
@@ -466,9 +492,9 @@ def parse_args(arglist):
         namespace: the parsed arguments, as a namespace.
     """
     parser = ArgumentParser()
-    parser.add_argument("-n1", "--player1name", help="string represents the"
+    parser.add_argument("player1Name", help="string represents the"
                         " name of player 1.")
-    parser.add_argument("-n2", "--player2name", help="string represents the"
+    parser.add_argument("player2Name", help="string represents the"
                         " name of player 2.")
     return parser.parse_args(arglist)
 
