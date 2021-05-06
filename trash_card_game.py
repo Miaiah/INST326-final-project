@@ -7,8 +7,6 @@ import random
 import time
 from enum import Enum
 
-import sys
-
 class Suit(Enum):
     """A Enum class that represents the 4 type of suits of cards.
         Enum reference: https://docs.python.org/3/library/enum.html
@@ -57,10 +55,10 @@ class Card:
             Sets attribute revealed.
         """
         self.revealed = True
-    
+        
     def __str__(self):
         if self.revealed:
-            return f"{self.number} {self.suit}"
+            return f"{self.number} {self.suit.name}"
         else:
             return "*"
 
@@ -80,7 +78,6 @@ class Deck:
 
         """
         self.cards = []
-        self.discards = []
         self.build_deck()
 
     def build_deck(self):
@@ -133,10 +130,10 @@ class Deck:
             if len(self.cards) < count:
                 raise ValueError("Not enough cards.")
 
-            dealedCards = []
+            dealed_cards = []
             for i in range(count):
-                dealedCards.append(self.cards.pop())
-            return dealedCards
+                dealed_cards.append(self.cards.pop())
+            return dealed_cards
 
 class Player:
     """ A class of player information with name, the list of the cards of the
@@ -144,33 +141,36 @@ class Player:
 
     Attributes:
         name (str): name of player.
-        positionCards (list): A list of Card objects representing the cards
+        position_cards (list): A list of Card objects representing the cards
             a player has for the game. Initially, the player has 10 unrevealed
             cards.
-        cardInHand (Card): a card the player is dealt from the deck or from the
-            disposed pool for making different decisions including swapping with
-            one of the card from the cards of the player and disposing the card
-            which will append the card to the disposed pool.
+        card_in_hand (Card): a card the player is dealt from the deck or from 
+            the disposed pool for making different decisions including swapping 
+            with one of the card from the cards of the player and disposing the 
+            card which will append the card to the disposed pool.
 
     """
 
-    def __init__(self, name, cardInHand = None):
+    def __init__(self, name, position_cards, card_in_hand = None):
         """ Initialize the player with a name, list of the cards of the player
             and an optional card in hand.
 
         Args:
             name (name): The name of the player.
-            cardInHand (Card, optional): A Card object representing the card the 
-                player has in hand to play the game. Defaults to None.
+            position_cards (list): A list of 10 unrevealed Card objects
+                representing the cards a player initially has for the game.
+            card_in_hand (Card, optional): A Card object representing the card 
+                the player has in hand to play the game. Defaults to None.
 
         """
         self.name = name
-        self.positionCards = []
-        self.cardInHand = cardInHand
+        self.position_cards = position_cards
+        self.card_in_hand = card_in_hand
         
     def check_swap(self, index):
-        """ Try to swap a card in hand with a position card. If the cards can be
-        swapped, return True. Otherwise return False.
+        """ Check whether it is possible to swap a card in hand with a position 
+            card. If the cards can be swapped, return True. Otherwise return 
+            False.
         
         Args:
             index (int): The index of the card in the cards attribute that the
@@ -180,19 +180,29 @@ class Player:
             bool: Whether the cards can swap. 
             
         Raises:
-            ValueError: Position Cards are incorrect.
+            ValueError: No card in hand or Position Cards are incorrect.
+            IndexError: Invalid index.
+
+        Side effects:
+            Modify attributes card_in_hand and position_cards.
+
         """
         
-        if self.positionCards == None or len(self.positionCards) != 10:
+        if self.card_in_hand == None:
+            raise ValueError("No card in hand.")
+        elif self.position_cards == None or len(self.position_cards) != 10:
             raise ValueError("Position Cards are incorrect.")
+        elif index < 1 or index >10:
+            raise IndexError("Invalid index.")
         
-        print(f"Checking to see if a card can be swapped at number {index + 1}")
-         
-        if  index == 10 or (index < 10 and self.positionCards[index].revealed is False):
-            print("Card can be swapped!")
+        print(f"\nChecking to see if the card can be swapped at index " + 
+              f"{index}.\n")
+
+        if self.card_in_hand.number == 13 or self.card_in_hand.number == index:
+            print("Cards can be swapped!\n")
             return True
         else:
-            print("Card can't be swapped")
+            print("Cards can't be swapped.\n")
             return False
         
     def swap(self, index):
@@ -203,193 +213,90 @@ class Player:
             card in hand is trying to swap.
             
         Side effects:
-            Modifies attributes cardInHand and positionCards.
+            Modifies attributes card_in_hand and position_cards.
         """
-        tmp = self.positionCards[index]
-        print(f"Placing {index + 1} in its correct position." \
-            f"The card was swapped for a {tmp.number}\n")
-        self.cardInHand[0].revealed = True
-        self.positionCards[index] = self.cardInHand[0]
-        self.cardInHand[0] = tmp
+        tmp = self.position_cards[index - 1]
+        tmp.reveal()
+        print(f"Placing {self.card_in_hand} in the position cards. " \
+            f"The card was swapped for a {tmp}.\n")
+        self.position_cards[index - 1] = self.card_in_hand
+        self.card_in_hand = tmp
         
+class GameStage(Enum):
+    """ An Enum class that represents the 4 type of game stages.
+        The 4 game stages are: 1. player1_play which represents player 1 is
+        currently playing; 2. player2_play which represents player 2 is
+        currently playing; 3. player1_won which represents player 1 has won the
+        game; 4. player2_won which represents player 2 has won the game.
+
+    Args:
+        Enum (Enum): Enum class as the parent class.
+
+    """
+    player1_play = 1
+    player2_play = 2
+    player1_won = 3
+    player2_won = 4
 
 class Game:
     """ A class represents a game of the Trash Card Game. The class contains two
         players, a deck of card, a list of disposed cards and a game stage enum.
 
     Attributes:
-        gameStage (GameStage): A GameStage representing the current stage of the
-            game. Game stages include Player1Stage
+        game_stage (GameStage): A GameStage representing the current stage of 
+            the game.
+        deck (Deck): A deck of cards that represents the remaining unreveal
+            cards. At the beginning of each player's round, the player can
+            choose to get dealt a card from this deck or pick a card from the
+            disposed cards list.
+        disposed_cards (list): A list of Card objects that represents the cards
+            disposed by both players. At the beginning of each player's round,
+            the player can choose to pick a card from this list or get dealt a
+            card from the deck.
         player1 (Player): A Player object that represents the player1.
         player2 (Player): A Player object that represents the player2.
-        game_deck (Deck): A deck of cards that represents the remaining unreveal 
-            cards. At the beginning of each player's round, the player can 
-            choose to get dealt a card from this deck or pick a card from the 
-            disposed cards list.
-        trash_card (Card): Card object representing current card in trash.
         
     """
-    
-    def __init__(self, player1, player2):
-        """ Initialize the game with the names of the 2 players. The init 
-            function will generate the deck with shuffling, deal 10 cards from 
+
+    def __init__(self, player1_name, player2_name):
+        """ Initialize the game with the names of the 2 players. The init
+            function will generate the deck with shuffling, deal 10 cards from
             the deck and create the player1 object, deal 10 cards from the deck
             and create the player2 object and randomly pick a player to start
             the game.
 
         Args:
-            player1 (str): The name of Player 1.
-            player2 (str): The name of Player 2.
+            player1_name (str): The name of Player 1.
+            player2_name (str): The name of Player 2.
             
         """
-        self.player1 = Player(player1)
-        self.player2 = Player(player2) 
-        self.game_deck = Deck()
-        self.trash_card = Card("Spade", 100)  
+        self.deck = Deck()
+        # position cards for player 1
+        player1_position_cards = get_position_cards(self.deck)
+        # position cards for player 2
+        player2_position_cards = get_position_cards(self.deck)
         
+        # randomly select who will start and set the game stage 
+        start_player = random.randint(1,2) 
+        if start_player == 1:
+            self.game_stage = GameStage.player1_play
+        else:
+            self.game_stage = GameStage.player2_play
         
-    def first_turn(self, player):
-        """ First turn in game.
+        # initialize player1 and player2 objects with the names and cards
+        self.player1 = Player(player1_name, player1_position_cards)
+        self.player2 = Player(player2_name, player2_position_cards)
         
-        Args:
-            player (Player): A Player object.
-            
-        Side effects:
-            Modifies values of Game and Player object attributes.
-        """
-        # auto draw card
-        player.cardInHand = self.game_deck.deal(1)
-        print(f"\n{player.name} draws a {player.cardInHand[0].number}.\n")
-            
-        # attempt to swap card
-        while player.check_swap((player.cardInHand[0].number) - 1):
-            
-            time.sleep(3)
-            if player.cardInHand[0].number == 11:
-                print(f"{player.name} drew an 11! Here are {player.name}'s current cards:")
-                for card in player.positionCards:
-                    print(card.number if card.revealed else "*", end = " ")
-                    
-                wildcard_index = input("Where would you like to place the wildcard [1-10]?")
-                player.cardInHand[0].reveal()
-                player.swap(int(wildcard_index) - 1)
-                    
-            elif player.cardInHand[0].number < 11:
-                player.cardInHand[0].reveal()
-                player.swap(player.cardInHand[0].number -1)
+        self.disposed_cards = []
         
-        # place useless card in trash pile
-        print(f"placing player card in trash: {player.cardInHand[0].number}\n")
-        
-        self.trash_card = player.cardInHand[0]
-        player.cardInHand = [20]
-        
-        
-        
-    def take_turn(self, player):
-        """ Takes turn for player
-        
-        Args:
-            player (obj): A Player object.
-            
-        Side effects:
-            Modifies attributes of Game and Player classes. 
-            Prints details of game and asks for input in certain situations.
-        """
-        
-        # Checks if trash_card is unplayable
-        if self.trash_card.number > 11 or \
-            player.check_swap((self.trash_card.number) - 1) is False:
-            
-            # auto draw card
-            player.cardInHand = self.game_deck.deal(1)
-            print(f"\n{player.name} draws a {player.cardInHand[0].number}.\n")
-            
-            # attempt to swap card
-            while player.check_swap((player.cardInHand[0].number) - 1):
-                
-                time.sleep(3)
-                if player.cardInHand[0].number == 11:
-                    print(f"{player.name} drew an 11! Here are {player.name}'s current cards:")
-                    for card in player.positionCards:
-                        print(card.number if card.revealed else "*", end = " ")
-                    
-                    wildcard_index = input("Where would you like to place the wildcard [1-10]?")
-                    player.cardInHand[0].reveal()
-                    player.swap(int(wildcard_index) - 1)
-                    
-                elif player.cardInHand[0].number < 11:
-                    player.cardInHand[0].reveal()
-                    player.swap(player.cardInHand[0].number -1)
-                 
-            
-            
-        # Check if card in trash_card can be used
-        elif player.check_swap((self.trash_card.number) - 1) is True:
-            
-            # Asks if player wants to use trash card
-            ask_swap = input(f"Would you like to use the current trash card (Y/N)? \
-                Trash card: {self.trash_card.number}")
-            
-            
-            if ask_swap.lower() == "yes" or "y":
-                player.cardInHand[0] = self.trash_card
-                print(f"{player.name} draws a {player.cardInHand[0].number} from the trash pile.\n")
-                    
-                while player.check_swap((player.cardInHand[0].number) - 1):
-                    
-                    time.sleep(3)
-                    if player.cardInHand[0].number == 11:
-                        print(f"{player.name} drew an 11! Here are {player.name}'s current cards:")
-                        for card in player.positionCards:
-                            print(card.number if card.revealed else "*", end = " ")
-                    
-                        wildcard_index = input("Where would you like to place the wildcard [1-10]?")
-                        player.cardInHand[0].reveal()
-                        player.swap(int(wildcard_index) - 1)
-                        
-                    elif player.cardInHand[0].number < 11:
-                        player.cardInHand[0].reveal()
-                        player.swap(player.cardInHand[0].number -1)
-                        
-
-                        
-            elif ask_swap.lower() == "no" or "n":
-                
-                player.cardInHand = self.game_deck.deal(1)
-                print(f"\n{player.name} draws a {player.cardInHand[0].number}.\n")
-            
-                # attempt to swap card
-                while player.check_swap((player.cardInHand[0].number) - 1):
-                    
-                    time.sleep(3)
-                    if player.cardInHand[0].number == 11:
-                        print(f"{player.name} drew an 11! Here are {player.name}'s current cards:")
-                        for card in player.positionCards:
-                            print(card.number if card.revealed else "*", end = " ")
-                    
-                        wildcard_index = input("Where would you like to place the wildcard [1-10]?")
-                        player.cardInHand[0].reveal
-                        player.swap(int(wildcard_index) - 1)
-                        
-                    elif player.cardInHand < 11:
-                        player.cardInHand[0].reveal
-                        player.swap(player.cardInHand[0].number -1)
-                 
-                
-        # place useless card in trash pile
-        print(f"placing player card in trash: {player.cardInHand[0].number}\n")
-        self.trash_card = player.cardInHand[0]
-        player.cardInHand = [20]
-    
-    def playTrash(self):
+    def play_trash(self):
         """ Facilitates game of trash between two players until one wins.
 
             There will be a loop starts from playing by the player of the
             gameStage. The player can choose to get dealt a card from the deck
             or pick a card from the disposed deck (the first round do not have
             this option).
-
+            
             After getting the card in hand, there is another inner loop for the
             player to play. In the inner loop, the player can choose to either
             swap the card in hand with the card in the cards list where the
@@ -402,64 +309,228 @@ class Game:
             determines if the player has won the game or not by checking whether
             all the cards of the player are revealed. If the player has won the
             game, set the game stage to the won stage of the player (e.g.
-            Player1Won for player1).
-
+            player1_won for player1).
+            
             If the player choose to dispose the card, the card will be added to
             the disposed cards list and the player's round is over. Set the game
             stage to the play stage of the other player (e.g. if player just
-            finished the round, set the game stage to Player2Stage) and then
+            finished the round, set the game stage to player2_play) and then
             start the round of the other player.
-
+            
             The loop will be terminated if the game stage is the won stage of
             either player. After the loop is terminated, print the winning
             message.
             
-        Side effects: 
-            Modifies gameStage, deck, player1 and player2 
+        Side effects:
+            Modifies game_stage, deck, disposed_cards, player1 and player2
             attributes. Prints details of game and asks for input.
             
         """
-        # Creates deck object, trash card, and deals cards to players
-        self.player1.positionCards = self.game_deck.deal(10)
-        self.player2.positionCards = self.game_deck.deal(10)
-        self.player1.cardInHand = [20]
-        self.player2.cardInHand = [20]
-        round = 1
-        testing = True
-       
-        #while hasWon(self.player1) and hasWon(self.player2) is False:
-        while testing is True:
-            print(f"Round {round}:")
-            time.sleep(4)
+        print("Welcome to the trash card game!\n")
+        # if the game stage is the play stage, keep playing rounds between the 
+        # 2 players
+        while self.game_stage == GameStage.player1_play or \
+            self.game_stage == GameStage.player2_play:
             
-            # Prints current cards in hand for both players.
-            print(f"\nStandings\n{self.player1.name}'s cards: ")
-            for card in self.player1.positionCards:
-                print(card.number if card.revealed else "*", end = " ")
-                
-            print(f"\n{self.player2.name}'s cards: ")
-            for card in self.player2.positionCards:
-                print(card.number if card.revealed else "*", end = " ")
+            self.take_turn()
+        
+        # print the final position cards of the players and the winning message
+        print_position_cards(self.player1)
+        print()
+        print_position_cards(self.player2)
+        print()
+        
+        if self.game_stage == GameStage.player1_won:
+            print(f"{self.player1.name} won!")
+        else:
+            print(f"{self.player2.name} won!")
             
-            print(f"\nCurrent trash card: {self.trash_card.number}\n")    
-                
+    def take_turn(self):
+        """ Takes turn for the current player.
             
-            # If first card is being drawn
-            if self.trash_card.number == 100:
-                print(f"{self.player1.name}'s turn:")
-                self.first_turn(self.player1)
-                print(f"{self.player2.name}'s turn:")
-                self.take_turn(self.player2)
-            
-            else:
-                print(f"\n{self.player1.name}'s turn:")
-                self.take_turn(self.player1)
-                print(f"\n{self.player2.name}'s turn:")
-                self.take_turn(self.player2)
-            
-            round += 1
+        Side effects:
+            Modifies attributes of game_stage, player1, player2, disposedCard
+            and/or deck attributes. 
+            Prints details of game and asks for input in certain situations.
+        """
+        # set the current player based on the game stage
+        if self.game_stage == GameStage.player1_play:
+            current_player = self.player1
+        else:
+            current_player = self.player2
+        
+        # print the position cards and disposed cards pool
+        print(f"{current_player.name}'s round: ")
+        print()
+        print_position_cards(current_player)
+        print("Disposed cards:")
+        print_cards_list(self.disposed_cards)
+        
+        # get the card in hand for the current player
+        self.get_card_in_hand(current_player)
+        
+        print(f"Card in hand: {current_player.card_in_hand}\n")
+        
+        # current player takes actions with the card in hand
+        self.play_card(current_player)
+        
+        # update the game stage if it is either player1_play or player2_play
+        # stage
+        if self.game_stage == GameStage.player1_play:
+            self.game_stage = GameStage.player2_play
+        elif self.game_stage == GameStage.player2_play:
+            self.game_stage = GameStage.player1_play
+        
+        print()
+        
+    def get_card_in_hand(self, current_player):
+        """ Get the card in hand for the current player. The card in hand can
+            be dealt from the deck or picked from the disposed cards pool.        
 
+        Args:
+            current_player (Player): the current player of the round.
+        
+        Side effects:
+            Modifies attributes of player1, player2, disposedCard and/or deck 
+            attributes. 
+            Prints details of game and asks for input in certain situations.
+        """
+        # ask player until the player has a card in hand
+        while current_player.card_in_hand == None:
+            decision = input("Would you like to draw a card(1) or get a card " +
+                    "from the disposed card pool(2)? ")
+            
+            if decision == "1": # if user choose to get the card from deck
+                current_player.card_in_hand = self.deck.deal()
+            elif decision == "2": # if user choose to get the card from the
+                # disposed cards pool
+                
+                if (len(self.disposed_cards) == 0): # if there is no card in the
+                    # disposed cards pool
+                    print("No card in the disposed pool.\n")
+                else:
+                    index = None
+                    
+                    # ask the player to pick an index for the card in the 
+                    # disposed cards pool until it is valid
+                    while index == None:
+                        decision = input("\nWhich card would you want to " +
+                            "pick from the disposed card pool? Please " +
+                            "input the index: ")
+                        if int(decision) <= len(self.disposed_cards) \
+                            and int(decision) > 0:
+                            index = int(decision)
+                        else:
+                            print("\nIncorrect input. Please re-enter.")
+                    
+                    current_player.card_in_hand = self.disposed_cards.pop(index\
+                        - 1)
+            else:
+                print("\nIncorrect selection, please re-enter your choice.")
+            
+            print()
+
+    def play_card(self, current_player):
+        """ Current player plays the card in hand. The player can choose to 
+            either swap it with a position card or dispose the card.
+
+        Args:
+            current_player ([type]): [description]
+        
+        Side effects:
+            Modifies attributes of player1, player2, disposedCard and/or deck 
+            attributes. 
+            Prints details of game and asks for input in certain situations.
+        """
+        # ask the player what the player wants to do with the card in hand
+        action = input("Would you want to swap your card with a position " +
+            "card(1) or dispose your card(2)? ")
+        
+        # while the action is not dispose the card, keep the loop running
+        while action != "2":
+            
+            if action == "1": # if the player choose to swap the card in hand
+                # with a position card
+                position = int(input("\nWhere would you like to place your "
+                    + "card [1-10]? "))
+                
+                if position > 0 and position <= 10: # if the index is valid
+                    if current_player.check_swap(position): # if the cards can
+                        # be swapped
+                        current_player.swap(position)
+                        if hasWon(current_player): # if the current player has 
+                            # won, set the game stage to win stage and break the
+                            # loop
+                            if self.game_stage == GameStage.player1_play:
+                                self.game_stage = GameStage.player1_won
+                            elif self.game_stage == GameStage.player2_play:
+                                self.game_stage = GameStage.player2_won
+                            break
+                    else: # if the cards can not be swapped
+                        print("Unable to place the card. Plase try other " +
+                            "action.\n")
+                else: # if the index is invalid
+                    print("\nIncorrect index input.\n")
+                
+                print_position_cards(current_player)
+                print(f"Card in hand: {current_player.card_in_hand}")
+            else: # if the selection is not 1 or 2
+                print("\nIncorrect selection, please re-enter your choice.")
+                
+            print()
+            # ask the player again what the player wants to do with the card in 
+            # hand
+            action = input("Would you want to swap your card with a " +
+                "position card(1) or dispose your card(2)? ")
+        
+        # current player finishes the round
+        # dispose the current player's card in hand to the disposed card pool
+        self.dispose_card(current_player)
+        
+    def dispose_card(self, current_player):
+        """ dispose the card in hand from the current player to the disposed 
+            cards pool.
+
+        Args:
+            current_player (Player): the current player playing the round.
+        
+        Side effects:
+            Modifies attributes of player1, player2 and/or disposedCard.
+        """
+        self.disposed_cards.append(current_player.card_in_hand)
+        current_player.card_in_hand = None
+            
+def get_position_cards(deck):
+    """ get position cards for each player each round.
+    """
+    position_cards = deck.deal(10)
+    return position_cards
+
+def print_position_cards(player):
+    """ print the player's position cards
     
+    args:
+        player (Player): a player 
+    """
+    
+    print(f"{player.name}'s position cards:")
+    pos = 1
+    for card in player.position_cards:
+        print(f"{pos:<2}: {card}")
+        pos += 1
+    print()
+
+def print_cards_list(cards):
+    """ Display a list of cards 
+
+    Args:
+        cards (list): list of cards
+    """
+    for i, card in enumerate(cards):
+        if card.revealed:
+            print(f"{i + 1}: {card}")
+    print()
+
 def hasWon(player):
     """ Determines if a player has won the game. Returns True if all the cards
         of the player are revealed and False otherwise.
@@ -468,20 +539,22 @@ def hasWon(player):
         player (Player): a Player object for checking the winning status.
 
     Returns:
-        bool: boolean of whether the player has won the game or not.   
-    """
+        bool: boolean of whether the player has won the agme or not.
 
-def main(player1Name, player2Name):
+    """
+    return all(card.revealed for card in player.position_cards)
+
+def main(player1_name, player2_name):
     """ Initialize the Game with the player 1 name and player 2 name and play
         the game.
 
     Args:
-        player1Name (str): the name of player 1
-        player2Name (str): the path of player 2
+        player1_name (str): the name of player 1
+        player2_name (str): the path of player 2
 
     """
-    new_game = Game(player1Name, player2Name)
-    new_game.playTrash()
+    game = Game(player1_name, player2_name)
+    game.play_trash()
 
 def parse_args(arglist):
     """ Parse command-line arguments.
@@ -496,12 +569,12 @@ def parse_args(arglist):
         namespace: the parsed arguments, as a namespace.
     """
     parser = ArgumentParser()
-    parser.add_argument("player1Name", help="string represents the"
+    parser.add_argument("player1_name", help="string represents the"
                         " name of player 1.")
-    parser.add_argument("player2Name", help="string represents the"
+    parser.add_argument("player2_name", help="string represents the"
                         " name of player 2.")
     return parser.parse_args(arglist)
 
 if __name__ == "__main__":
     args = parse_args(sys.argv[1:])
-    main(args.player1Name, args.player2Name)
+    main(args.player1_name, args.player2_name)
