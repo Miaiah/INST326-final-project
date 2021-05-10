@@ -435,7 +435,7 @@ class Game:
             either swap it with a position card or dispose the card.
 
         Args:
-            current_player ([type]): [description]
+            current_player (Player): the current player of the round.
         
         Side effects:
             Modifies attributes of player1, player2, disposedCard and/or deck 
