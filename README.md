@@ -14,6 +14,7 @@ Each round, a player can either draw a card from the deck or pick a card from th
 
 ### How to run program from the command line:
 python3 trash_card_game.py player1name player2name  (on macOS) 
+
 python3 trash_card_game.py player1name player2name  (on Windows) 
 
 
