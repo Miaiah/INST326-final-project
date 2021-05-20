@@ -15,11 +15,18 @@ def test_deal(deck1):
     assert last_card.suit == dealed_card.suit
     assert dealed_card.revealed
     assert len(deck1.cards) == length - 1
-    
+
     """Deal 10 cards"""
     length = len(deck1.cards)
     dealed_cards = deck1.deal(10)
     assert len(dealed_cards) == 10
     assert len(deck1.cards) == length - 10
-    
-    
+
+def test_deck():
+    """Does build_deck generate correct number of cards?"""
+    card_deck = trash.Deck()
+    card_number = 0
+    for item in card_deck.cards:
+        card_number += 1
+    assert card_number ==  52
+
