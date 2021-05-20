@@ -22,4 +22,21 @@ def test_deal(deck1):
     assert len(dealed_cards) == 10
     assert len(deck1.cards) == length - 10
     
+def test_swap(capsys):
+    """Does check_swap and swap functions output correctly?"""
+    test_deck = trash.Deck()
+    player_position_cards = trash.get_position_cards(test_deck)
+    player1 = trash.Player("Player", player_position_cards, trash.Card(trash.Suit.Spade, 7, True))
+    player_card = player1.position_cards[6]
+    
+    player1.check_swap(7)
+    player1.swap(7)
+    
+    
+    outerr = capsys.readouterr()
+    out = outerr.out
+    assert out == f"\nChecking to see if the card can be swapped at index 7.\n\n" \
+                    f"Cards can be swapped!\n\n" \
+                    f"Placing 7 Spade in the position cards. " \
+                    f"The card was swapped for a {player_card}.\n\n"
     
