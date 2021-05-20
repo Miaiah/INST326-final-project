@@ -57,6 +57,11 @@ class Card:
         self.revealed = True
         
     def __str__(self):
+        """ String representation of the Card object.
+
+        Returns:
+            string: A string representing the Card object.
+        """
         if self.revealed:
             return f"{self.number} {self.suit.name}"
         else:

@@ -3,9 +3,22 @@ import trash_card_game as trash
 
 @fixture
 def deck1():
+    """ Create a Deck object for testing.
+
+    Returns:
+        Deck: a new initialized Deck object for testing
+    """
     return trash.Deck()
 
 def test_deal(deck1):
+    """ Test the deal() method from the Deck class with no parameter and a
+        integer 10 as parameter.
+
+    Args:
+        deck1 (Deck): The Deck object for testing.
+
+    """
+
     """Does deal() deals the correct number of card and the right card?"""
     """Deal 1 card"""
     length = len(deck1.cards)
@@ -15,7 +28,7 @@ def test_deal(deck1):
     assert last_card.suit == dealed_card.suit
     assert dealed_card.revealed
     assert len(deck1.cards) == length - 1
-    
+
     """Deal 10 cards"""
     length = len(deck1.cards)
     dealed_cards = deck1.deal(10)
@@ -40,3 +53,12 @@ def test_swap(capsys):
                     f"Placing 7 Spade in the position cards. " \
                     f"The card was swapped for a {player_card}.\n\n"
     
+
+def test_deck():
+    """Does build_deck generate correct number of cards?"""
+    card_deck = trash.Deck()
+    card_number = 0
+    for item in card_deck.cards:
+        card_number += 1
+    assert card_number ==  52
+
