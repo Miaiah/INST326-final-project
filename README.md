@@ -14,9 +14,6 @@ Each round, a player can either draw a card from the deck or pick a card from th
 ### test_trash_card_game.py
 This script test_trash_card_game.py is used to test the functions and methods in the trash_card_game.py. There will be three functions to test the trash_card_game.py. Those functions are test_deal(), test_deck(), and test_swap().  test_deal() is used to test the deal() method from the Deck class with no parameter and an integer 10 as the parameter. test_deck() is used to check build_deck generate the correct number of cards. test_swap() is used to test swap.
 
-### test_trash_card_game.py
-[An explanation of the purpose of test_trash_card_game.py]
-
 
 ### How to run program from the command line:
 python3 trash_card_game.py player1name player2name  (on macOS)
